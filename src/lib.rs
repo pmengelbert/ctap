@@ -96,7 +96,9 @@ pub fn get_devices() -> FidoResult<impl Iterator<Item = hid::DeviceInfo>> {
         }
     }
 
-    Ok(v.into_iter())
+    let u = v.into_iter().filter(|dev| dev.usage_page == 0xf1d0 && dev.usage == 0x21).collect::<Vec<hid::DeviceInfo>>();
+
+    Ok(u.into_iter())
 }
 
 /// A credential created by a FIDO2 authenticator.
