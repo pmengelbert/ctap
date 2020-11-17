@@ -86,17 +86,23 @@ static BROADCAST_CID: [u8; 4] = [0xff, 0xff, 0xff, 0xff];
 /// Looks for any connected HID devices and returns those that support FIDO.
 pub fn get_devices() -> FidoResult<impl Iterator<Item = hid::DeviceInfo>> {
     let mut v: Vec<hid::DeviceInfo> = Vec::new();
+    let mut u: Vec<hid::DeviceInfo> = Vec::new();
+
     if std::env::consts::OS != "linux" {
         for dev in hid_macwin::enumerate().unwrap() {
             v.push(dev);
         }
+
+        u = v;
     } else {
         for dev in hid::enumerate().unwrap() {
             v.push(dev);
         }
+        u = v.into_iter()
+            .filter(|dev| dev.usage_page == 0xf1d0 && dev.usage == 0x21)
+            .collect::<Vec<hid::DeviceInfo>>();
     }
 
-    let u = v.into_iter().filter(|dev| dev.usage_page == 0xf1d0 && dev.usage == 0x21).collect::<Vec<hid::DeviceInfo>>();
 
     Ok(u.into_iter())
 }
