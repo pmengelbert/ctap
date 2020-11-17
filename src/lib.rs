@@ -60,6 +60,7 @@ mod error;
 pub mod extensions;
 mod hid_common;
 mod hid_linux;
+mod hid_macwin;
 mod packet;
 mod util;
 
@@ -84,10 +85,18 @@ static BROADCAST_CID: [u8; 4] = [0xff, 0xff, 0xff, 0xff];
 
 /// Looks for any connected HID devices and returns those that support FIDO.
 pub fn get_devices() -> FidoResult<impl Iterator<Item = hid::DeviceInfo>> {
-    hid::enumerate()
-        .context(FidoErrorKind::Io)
-        .map(|devices| devices.filter(|dev| dev.usage_page == 0xf1d0 && dev.usage == 0x21))
-        .map_err(From::from)
+    let mut v: Vec<hid::DeviceInfo> = Vec::new();
+    if std::env::consts::OS != "linux" {
+        for dev in hid_macwin::enumerate().unwrap() {
+            v.push(dev);
+        }
+    } else {
+        for dev in hid::enumerate().unwrap() {
+            v.push(dev);
+        }
+    }
+
+    Ok(v.into_iter())
 }
 
 /// A credential created by a FIDO2 authenticator.
